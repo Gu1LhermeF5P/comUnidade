@@ -7,7 +7,7 @@ import {
     TouchableOpacity as TouchableOpacityOnboarding, 
     Image as ImageOnboarding,
     Alert as AlertOnboarding,
-    StatusBar as StatusBarOnboarding // Adicionado StatusBarOnboarding
+    StatusBar as StatusBarOnboarding 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import AppLogo from '../../assets/logo_comunidade_icon.png'; 
@@ -50,7 +50,7 @@ const OnboardingScreen = ({ route, navigation }) => {
             <TextOnboarding style={stylesOnboarding.permissionNote}>Você será solicitado a conceder estas permissões quando necessário dentro do app.</TextOnboarding>
         </ViewOnboarding>
         <TouchableOpacityOnboarding style={stylesOnboarding.button} onPress={handleCompleteAndProceed}>
-          <TextOnboarding style={stylesOnboarding.buttonText}>Percebi, Continuar</TextOnboarding>
+          <TextOnboarding style={stylesOnboarding.buttonText}>Aceito, Continuar</TextOnboarding>
         </TouchableOpacityOnboarding>
       </ViewOnboarding>
     </SafeAreaViewOnboarding>

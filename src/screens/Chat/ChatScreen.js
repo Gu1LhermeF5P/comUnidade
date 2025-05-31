@@ -1,139 +1,211 @@
-import React, { useState as useStateChat, useCallback as useCallbackChat, useEffect as useEffectChatScreen } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
-    View as ViewChat, 
-    Text as TextChat, 
-    StyleSheet as StyleSheetChat, 
-    SafeAreaView as SafeAreaViewChat, 
-    TextInput as TextInputChat, 
-    FlatList as FlatListMessages, 
-    TouchableOpacity as TouchableOpacityChat, 
-    StatusBar as StatusBarChat, 
+    View,         
+    Text,         
+    StyleSheet,   
+    SafeAreaView, 
+    TextInput, 
+    FlatList, 
+    TouchableOpacity, 
+    StatusBar, 
     KeyboardAvoidingView, 
-    Platform,
-    // Alert as AlertChat // Não é mais necessário para esta versão simples
+    Platform,     
+    Alert         
 } from 'react-native';
-import IconChat from 'react-native-vector-icons/MaterialCommunityIcons';
-// import * as P2PService from '../../services/offlineCommunicationService'; // Removida importação do serviço P2P
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { useHeaderHeight } from '@react-navigation/elements'; // Para obter a altura do header da Stack
 
 const ChatScreen = ({ route, navigation }) => {
-  const { chatId, chatName } = route.params || {}; 
+  const { chatId, chatName: initialChatName, isNewChat } = route.params || {}; 
   
-  // Mensagens mockadas para este chat específico
-  const [messages, setMessages] = useStateChat([
-    { id: '1', text: `Conversa com ${chatName || 'Utilizador'}`, sender: 'system', timestamp: new Date().toISOString() },
-    { id: '2', text: 'Esta é uma mensagem de exemplo.', sender: 'other', timestamp: new Date(Date.now() - 60000).toISOString() }, // sender 'other'
-    { id: '3', text: 'E esta é a minha resposta!', sender: 'me', timestamp: new Date().toISOString() }, // sender 'me'
-  ]);
-  const [inputText, setInputText] = useStateChat('');
+  const [messages, setMessages] = useState([]); 
+  const [inputText, setInputText] = useState(''); 
+  const [currentChatName, setCurrentChatName] = useState(initialChatName || 'Nova Conversa'); 
+  const MESSAGES_KEY = `@ComUnidade:messages_${chatId}`;
+  const CHATS_KEY_FOR_LIST = '@ComUnidade:chats'; 
+  const headerHeight = useHeaderHeight(); // Obtém a altura do header da Stack Navigator
 
-  // Não há mais subscrição a mensagens P2P
-  useEffectChatScreen(() => {
-    console.log(`A iniciar chat com ${chatName} (ID: ${chatId})`);
-    // Lógica de limpeza (se houver alguma) pode ir aqui no retorno
-    return () => {
-      console.log(`A fechar chat com ${chatName}`);
-    };
-  }, [chatId, chatName]);
+  const loadMessages = useCallback(async () => { 
+    if (!chatId) return;
+    try {
+      const storedMessages = await AsyncStorage.getItem(MESSAGES_KEY);
+      if (storedMessages !== null) {
+        setMessages(JSON.parse(storedMessages));
+      } else if (isNewChat) {
+        const systemMessage = {
+            id: String(Date.now()), text: `Conversa iniciada com ${currentChatName}.`,
+            sender: 'system', timestamp: new Date().toISOString(),
+        };
+        setMessages([systemMessage]);
+      }
+    } catch (e) { console.error("Erro ao carregar mensagens:", e); }
+  }, [chatId, MESSAGES_KEY, isNewChat, currentChatName]);
 
-  const onSend = useCallbackChat(() => {
-    if (inputText.trim().length > 0) {
-      const myUniqueDeviceId = 'me'; // Simplesmente 'me' para o remetente local
-      
+  useEffect(() => { 
+    loadMessages();
+    // O título do header agora é definido no App.js nas options da Stack.Screen
+    // Mas podemos atualizar o `currentChatName` se ele mudar após o prompt
+    if (initialChatName !== currentChatName) {
+        navigation.setOptions({ title: currentChatName });
+    }
+  }, [loadMessages, navigation, currentChatName, initialChatName]);
+
+  const saveMessagesToStorage = async (updatedMessages) => { 
+    if (!chatId) return;
+    try {
+      await AsyncStorage.setItem(MESSAGES_KEY, JSON.stringify(updatedMessages));
+    } catch (e) { console.error("Erro ao guardar mensagens:", e); }
+  };
+  
+  const updateChatListSummary = async (lastMessageText) => { 
+    try {
+        const storedChats = await AsyncStorage.getItem(CHATS_KEY_FOR_LIST);
+        let chatsArray = storedChats ? JSON.parse(storedChats) : [];
+        const chatIndex = chatsArray.findIndex(c => c.id === chatId);
+
+        const chatSummary = {
+            id: chatId, name: currentChatName, 
+            lastMessage: lastMessageText, lastMessageTimestamp: new Date().toISOString(),
+        };
+
+        if (chatIndex > -1) {
+            chatsArray[chatIndex] = chatSummary;
+        } else {
+            chatsArray.unshift(chatSummary); 
+        }
+        chatsArray.sort((a,b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp));
+
+        await AsyncStorage.setItem(CHATS_KEY_FOR_LIST, JSON.stringify(chatsArray));
+    } catch (e) { console.error("Erro ao atualizar lista de chats:", e); }
+  };
+
+  const onSend = useCallback(async () => { 
+    if (inputText.trim().length > 0 && chatId) {
+      const myUniqueDeviceId = 'me'; 
       const newMessage = {
-        id: String(Date.now()), 
-        text: inputText,
-        sender: myUniqueDeviceId, 
-        timestamp: new Date().toISOString(),
+        id: String(Date.now()), text: inputText,
+        sender: myUniqueDeviceId, timestamp: new Date().toISOString(),
       };
       
-      setMessages(prevMessages => [newMessage, ...prevMessages]); // Adiciona no início para ordem decrescente
+      const updatedMessages = [newMessage, ...messages];
+      setMessages(updatedMessages);
+      await saveMessagesToStorage(updatedMessages); 
+      
+      if (isNewChat && currentChatName === 'Nova Conversa') {
+        Alert.prompt(
+          "Nome da Conversa", "Dê um nome para esta nova conversa:",
+          [{ text: "Cancelar", style: "cancel" },
+           { text: "Guardar", onPress: async (name) => {
+                const finalName = name || `Conversa`;
+                setCurrentChatName(finalName);
+                await updateChatListSummary(inputText); 
+                navigation.setParams({ chatName: finalName, isNewChat: false }); 
+              }
+           }], 'plain-text', currentChatName !== 'Nova Conversa' ? currentChatName : ''
+        );
+      } else {
+        await updateChatListSummary(inputText); 
+      }
       setInputText('');
-
-      console.log("Mensagem adicionada localmente:", newMessage);
-      // Não há chamada a P2PService.sendMessage
     }
-  }, [inputText, messages]); // Removido chatId e isConnected das dependências
+  }, [inputText, messages, chatId, saveMessagesToStorage, isNewChat, currentChatName, navigation, updateChatListSummary]);
 
   const renderMessageItem = ({ item }) => (
-    <ViewChat style={[stylesChat.messageBubble, item.sender === 'me' ? stylesChat.userMessage : stylesChat.otherMessage]}>
-      {item.sender === 'system' ? (
-         <TextChat style={stylesChat.systemMessageText}>{item.text}</TextChat>
-      ) : (
-        <TextChat style={stylesChat.messageText}>{item.text}</TextChat>
+    <View style={[styles.messageBubble, 
+        item.sender === 'me' ? styles.userMessage : 
+        item.sender === 'system' ? styles.systemMessage : styles.otherMessage
+    ]}>
+      <Text style={item.sender === 'system' ? styles.systemMessageText : styles.messageText}>
+        {item.text}
+      </Text>
+      {item.sender !== 'system' && (
+        <Text style={styles.messageTimestamp}>
+            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
       )}
-      <TextChat style={stylesChat.messageTimestamp}>{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TextChat>
-    </ViewChat>
+    </View>
   );
 
-  const ScreenHeaderChat = () => (
-    <ViewChat style={stylesChat.headerContainer}>
-      <TouchableOpacityChat onPress={() => navigation.goBack()} style={stylesChat.backButton}>
-         <TextChat style={stylesChat.backButtonText}>‹</TextChat>
-      </TouchableOpacityChat>
-      <ViewChat style={stylesChat.headerTitleContainer}>
-        <TextChat style={stylesChat.headerTitle} numberOfLines={1}>{chatName || 'Chat'}</TextChat>
-        {/* Removido indicador de conexão, pois é apenas front-end */}
-      </ViewChat>
-      <TouchableOpacityChat onPress={() => console.log("Info do chat")} style={stylesChat.actionButton}>
-        <IconChat name="information-outline" size={26} color="#FFFFFF" />
-      </TouchableOpacityChat>
-    </ViewChat>
-  );
+  // O ScreenHeaderChat foi removido daqui, pois o header agora é gerido pelo StackNavigator no App.js
 
   return (
-    <SafeAreaViewChat style={stylesChat.safeArea}>
-      <StatusBarChat barStyle="light-content" backgroundColor={'#1C1C1E'} />
-      <ScreenHeaderChat />
+    <SafeAreaView style={styles.safeArea}>
+      {/* A StatusBar hidden={true} está no App.js, então não precisamos de outra aqui */}
+      {/* O header da StackNavigator é usado, então não precisamos do ScreenHeaderChat aqui */}
       <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} 
+        behavior={Platform.OS === "ios" ? "padding" : undefined} // 'height' pode ser problemático no Android com headers
+        style={styles.keyboardAvoidingContainer}
+        keyboardVerticalOffset={headerHeight + (Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0) } // Ajuste com altura do header e status bar no Android
       >
-        <FlatListMessages
+        <FlatList
             data={messages}
             renderItem={renderMessageItem}
             keyExtractor={(item) => item.id}
-            style={stylesChat.messagesList}
+            style={styles.messagesList}
             inverted 
-            contentContainerStyle={{paddingVertical:10}}
+            contentContainerStyle={styles.messagesListContent}
         />
-        <ViewChat style={stylesChat.inputContainer}>
-            <TextInputChat
-            style={stylesChat.textInput}
+        <View style={styles.inputContainer}>
+            <TextInput
+            style={styles.textInput}
             placeholder={"Digite sua mensagem..."}
             placeholderTextColor="#8E8E93"
             value={inputText}
             onChangeText={setInputText}
             multiline
             />
-            <TouchableOpacityChat style={stylesChat.sendButton} onPress={onSend} disabled={!inputText.trim()}>
-            <IconChat name="send-circle" size={36} color={!inputText.trim() ? "#555" : "#0A84FF"} />
-            </TouchableOpacityChat>
-        </ViewChat>
+            <TouchableOpacity style={styles.sendButton} onPress={onSend} disabled={!inputText.trim()}>
+            <Icon name="send-circle" size={36} color={!inputText.trim() ? "#555" : "#0A84FF"} />
+            </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
-    </SafeAreaViewChat>
+    </SafeAreaView>
   );
 };
 
-const stylesChat = StyleSheetChat.create({
+const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#121212' },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: '#3A3A3C', backgroundColor: '#1C1C1E' },
-  backButton: { paddingHorizontal:10, paddingVertical:5 },
-  backButtonText: { color: '#FFFFFF', fontSize: 28, lineHeight: 28 },
-  headerTitleContainer: { flex:1, flexDirection:'row', justifyContent:'center', alignItems:'center', marginHorizontal:5 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
-  // connectionDot: { width:8, height:8, borderRadius:4, marginLeft:8}, // Removido
-  actionButton: { paddingHorizontal:10, paddingVertical:5 },
-  messagesList: { flex: 1, paddingHorizontal: 10 },
+  keyboardAvoidingContainer: { // Novo container para o KeyboardAvoidingView
+    flex: 1,
+  },
+  // headerContainer: { ... }, // Removido, pois o header é da Stack
+  messagesList: { 
+    flex: 1, 
+    paddingHorizontal: 10,
+  },
+  messagesListContent: { // Adicionado para padding na lista invertida
+    paddingTop: 10, // Espaço no topo da lista (que é o fundo visualmente)
+    paddingBottom:10, // Espaço no fundo da lista (que é o topo visualmente)
+  },
   messageBubble: { maxWidth: '80%', padding: 10, borderRadius: 15, marginBottom: 10 },
   userMessage: { backgroundColor: '#0A84FF', alignSelf: 'flex-end', borderBottomRightRadius: 5 },
   otherMessage: { backgroundColor: '#2C2C2E', alignSelf: 'flex-start', borderBottomLeftRadius: 5 },
+  systemMessage: { backgroundColor: 'transparent', alignSelf: 'center', paddingVertical: 5},
   systemMessageText: { color: '#AEAEB2', fontStyle:'italic', fontSize:13, textAlign:'center'},
   messageText: { color: '#FFFFFF', fontSize: 15 },
   messageTimestamp: { color: '#E0E0E0', fontSize: 10, alignSelf: 'flex-end', marginTop: 5 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, borderTopWidth: 1, borderTopColor: '#3A3A3C', backgroundColor: '#1C1C1E' },
-  textInput: { flex: 1, backgroundColor: '#2C2C2E', color: '#FFFFFF', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 10, marginRight: 10, fontSize:15, maxHeight:100 },
-  sendButton: { padding: 5 },
+  inputContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 10,
+    paddingVertical: 8, // Ajustado padding
+    borderTopWidth: 1, 
+    borderTopColor: '#3A3A3C', 
+    backgroundColor: '#1C1C1E' 
+  },
+  textInput: { 
+    flex: 1, 
+    backgroundColor: '#2C2C2E', 
+    color: '#FFFFFF', 
+    borderRadius: 20, 
+    paddingHorizontal: 15, 
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8, // Ajuste de padding para diferentes plataformas
+    marginRight: 10, 
+    fontSize:15, 
+    maxHeight:100 
+  },
+  sendButton: { paddingLeft: 5 }, // Ajustado padding do botão de enviar
 });
 
 export default ChatScreen;
