@@ -1,15 +1,16 @@
-import React, { useState } from 'react'; // Removido alias useStateCreate
+import React, { useState } from 'react';
 import {
-  SafeAreaView, // Removido alias
-  View,         // Removido alias
-  Text,         // Removido alias
+  SafeAreaView,
+  View,
+  Text,
   TextInput,
-  TouchableOpacity, // Removido alias
-  StyleSheet,     // Removido alias
+  TouchableOpacity,
+  StyleSheet,
   ScrollView,
-  StatusBar,
+  StatusBar, // StatusBar para configurar a do sistema, se necessário
   Alert,
   ActivityIndicator,
+  Platform // Para ajustes de padding se necessário
 } from 'react-native';
 import { createBulletin as createBulletinService } from '../../services/bulletinService';
 
@@ -45,21 +46,22 @@ const CreateBulletinScreen = ({ navigation }) => {
     }
   };
 
-  const ScreenHeader = () => ( // Renomeado de ScreenHeaderCreate
-    <View style={styles.headerContainer}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} disabled={isSubmitting}>
-        <Text style={styles.backButtonText}>‹</Text>
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Criar Boletim</Text>
-      <View style={styles.headerActionPlaceholder} />
-    </View>
-  );
+  // O ScreenHeader foi removido daqui, pois o header é fornecido pelo StackNavigator no App.js
+  // navigation.setOptions({ title: 'Criar Boletim' }); // O título já é definido no App.js
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={styles.container?.backgroundColor || '#121212'} />
-      <ScreenHeader />
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      {/* A StatusBar hidden={true} está no App.js, então não precisamos de outra aqui,
+          a menos que queiramos um estilo específico para esta tela que sobreponha o global.
+          Se o header da Stack Navigator for translúcido ou a StatusBar não estiver oculta,
+          pode ser necessário ajustar o padding superior do ScrollView.
+      */}
+      {/* <StatusBar barStyle="light-content" backgroundColor={styles.container?.backgroundColor || '#121212'} /> */}
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer} 
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.formGroup}>
           <Text style={styles.label}>REMETENTE</Text>
           <TextInput style={styles.input} placeholder="Seu nome ou da organização" placeholderTextColor="#6E6E73" value={sender} onChangeText={setSender} editable={!isSubmitting} />
@@ -111,15 +113,15 @@ const CreateBulletinScreen = ({ navigation }) => {
   );
 };
 
-// Usando 'styles' como nome padrão para o objeto de estilos
-const styles = StyleSheet.create({
+const styles = StyleSheet.create({ 
   safeArea: { flex: 1, backgroundColor: '#121212' },
-  container: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 30, backgroundColor: '#121212' },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: '#3A3A3C' },
-  backButton: { padding: 10 },
-  backButtonText: { color: '#FFFFFF', fontSize: 28, lineHeight: 28 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFFFFF' },
-  headerActionPlaceholder: { width: 44 },
+  scrollContainer: { // Renomeado de container para scrollContainer para evitar confusão
+    flexGrow: 1, 
+    paddingHorizontal: 20, 
+    paddingVertical: 20, // Adicionado padding vertical para o conteúdo do scroll
+    backgroundColor: '#121212' 
+  },
+  // headerContainer: { ... }, // Removido, pois o header é da Stack Navigator
   formGroup: { marginBottom: 20 },
   label: { fontSize: 14, color: '#AEAEB2', marginBottom: 8, fontWeight: '600', textTransform: 'uppercase' },
   input: { backgroundColor: '#2C2C2E', color: '#FFFFFF', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, borderWidth: 1, borderColor: '#3A3A3C' },
@@ -134,6 +136,8 @@ const styles = StyleSheet.create({
   submitButton: { backgroundColor: '#0A84FF', paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginTop: 20, height:50, justifyContent:'center' },
   submitButtonDisabled: { backgroundColor: '#555555'},
   submitButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  // container: { backgroundColor: '#121212' }, // Estilo para StatusBar, se necessário, mas o safeArea já define
 });
+
 
 export default CreateBulletinScreen;
