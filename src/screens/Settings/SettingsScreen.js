@@ -1,55 +1,56 @@
 import React from 'react'; 
-import { View as ViewSettings, Text as TextSettings, StyleSheet as StyleSheetSettings, SafeAreaView as SafeAreaViewSettings, TouchableOpacity as TouchableOpacitySettings, ScrollView as ScrollViewSettings, StatusBar as StatusBarSettings, Alert as AlertSettings } from 'react-native'; // Adicionado StatusBarSettings e AlertSettings
-import IconSettings from 'react-native-vector-icons/MaterialCommunityIcons'; 
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    SafeAreaView, 
+    TouchableOpacity, 
+    ScrollView, 
+    StatusBar, // Importado StatusBar diretamente
+    Alert // Importado Alert diretamente
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Usando Icon padrão
 
 const SettingItem = ({ icon, title, onPress }) => (
-    <TouchableOpacitySettings style={stylesSettings.itemContainer} onPress={onPress}>
-        <IconSettings name={icon} size={24} color="#AEAEB2" style={stylesSettings.itemIcon}/>
-        <TextSettings style={stylesSettings.itemText}>{title}</TextSettings>
-        <IconSettings name="chevron-right" size={24} color="#AEAEB2"/>
-    </TouchableOpacitySettings>
+    <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
+        <Icon name={icon} size={24} color="#AEAEB2" style={styles.itemIcon}/>
+        <Text style={styles.itemText}>{title}</Text>
+        <Icon name="chevron-right" size={24} color="#AEAEB2"/>
+    </TouchableOpacity>
 );
 
 const SettingsScreen = ({ navigation }) => {
 
-  const ScreenHeaderSettings = () => (
-    <ViewSettings style={stylesSettings.headerContainer}>
-      <TouchableOpacitySettings onPress={() => navigation.goBack()} style={stylesSettings.backButton}>
-         <TextSettings style={stylesSettings.backButtonText}>‹</TextSettings>
-      </TouchableOpacitySettings>
-      <TextSettings style={stylesSettings.headerTitle}>Configurações</TextSettings>
-      <ViewSettings style={stylesSettings.headerActionPlaceholder} />
-    </ViewSettings>
+  const ScreenHeader = () => ( 
+    <View style={styles.headerContainer}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+         <Text style={styles.backButtonText}>‹</Text>
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>Configurações</Text>
+      <View style={styles.headerActionPlaceholder} />
+    </View>
   );
 
 
   return (
-    <SafeAreaViewSettings style={stylesSettings.safeArea}>
-      <StatusBarSettings barStyle="light-content" backgroundColor={'#1C1C1E'} /> {/* Usando StatusBarSettings (alias para StatusBar) */}
-      <ScreenHeaderSettings />
-      <ScrollViewSettings style={stylesSettings.container}>
-        <TextSettings style={stylesSettings.sectionTitle}>Conta</TextSettings>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor={'#1C1C1E'} />
+      <ScreenHeader />
+      <ScrollView style={styles.container}>
+        <Text style={styles.sectionTitle}>Conta</Text>
         <SettingItem icon="account-circle-outline" title="Editar Perfil Local" onPress={() => console.log("Editar Perfil")} />
-        
-        <TextSettings style={stylesSettings.sectionTitle}>Rede Offline</TextSettings>
-        <SettingItem icon="wifi-cog" title="Preferências de Rede P2P" onPress={() => console.log("Preferências de Rede")} />
-        <SettingItem icon="access-point-network-off" title="Dispositivos Próximos" onPress={() => console.log("Dispositivos Próximos")} />
-
-        <TextSettings style={stylesSettings.sectionTitle}>Geral</TextSettings>
-        <SettingItem icon="bell-outline" title="Notificações" onPress={() => console.log("Notificações")} />
-        <SettingItem icon="theme-light-dark" title="Aparência (Tema)" onPress={() => console.log("Aparência")} />
-        
-        <TextSettings style={stylesSettings.sectionTitle}>Sobre</TextSettings>
-        <SettingItem icon="help-circle-outline" title="Ajuda e FAQ" onPress={() => console.log("Ajuda")} />
-        <SettingItem icon="information-outline" title="Sobre o ComUnidade" onPress={() => console.log("Sobre")} />
-        <SettingItem icon="shield-lock-outline" title="Política de Privacidade" onPress={() => console.log("Política de Privacidade")} />
-        <SettingItem icon="logout" title="Sair (Limpar Dados Locais)" onPress={() => AlertSettings.alert("Sair", "Tem a certeza que deseja limpar os dados locais e sair?")} />
-      </ScrollViewSettings>
-    </SafeAreaViewSettings>
+      
+        <Text style={styles.sectionTitle}>Geral</Text>
+        <SettingItem icon="bell-outline" title="Notificações" onPress={() => console.log("Notificações")} /> 
+        <View style={{marginTop: 20, marginBottom: 40}}>
+            <SettingItem icon="logout" title="Sair (Limpar Dados Locais)" onPress={() => Alert.alert("Sair", "Tem a certeza que deseja limpar os dados locais e sair?")} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-const stylesSettings = StyleSheetSettings.create({
+const styles = StyleSheet.create({ 
   safeArea: { flex: 1, backgroundColor: '#121212' },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: '#3A3A3C', backgroundColor: '#1C1C1E' },
   backButton: { padding: 10 },
@@ -58,8 +59,9 @@ const stylesSettings = StyleSheetSettings.create({
   headerActionPlaceholder: { width: 44 },
   container: { flex: 1 },
   sectionTitle: { fontSize: 14, fontWeight:'600', color: '#8E8E93', paddingHorizontal: 20, paddingTop: 25, paddingBottom:10, textTransform:'uppercase' },
-  itemContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', paddingVertical: 15, paddingHorizontal: 20, borderBottomWidth:1, borderBottomColor:'#303030'},
+  itemContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', paddingVertical: 15, paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor:'#303030'}, // Usado hairlineWidth para uma linha mais fina
   itemIcon: {marginRight:15},
   itemText: { flex:1, fontSize: 16, color: '#FFFFFF' },
 });
+
 export default SettingsScreen;

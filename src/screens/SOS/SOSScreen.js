@@ -8,8 +8,8 @@ import {
     Alert, 
     StatusBar, 
     ActivityIndicator,
-    Linking, // Importar Linking para fazer chamadas
-    Platform // Para alguns ajustes de UI específicos da plataforma, se necessário
+    Linking, 
+    Platform 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Location from 'expo-location'; 
@@ -19,7 +19,7 @@ const SOSScreen = ({ navigation }) => {
   const [locationInfo, setLocationInfo] = useState('Toque no botão SOS para partilhar a sua localização.');
   const [locationData, setLocationData] = useState(null); 
 
-  const EMERGENCY_NUMBER = '193';
+  const EMERGENCY_NUMBER = '193'; 
 
   const handleSOSPress = async () => {
     setIsLoadingLocation(true);
@@ -88,7 +88,8 @@ const SOSScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={'#121212'} />
-      <View style={styles.headerContainer}>
+
+      <View style={styles.customHeaderContainer}>
           <Text style={styles.screenTitle}>EMERGÊNCIA SOS</Text>
       </View>
       <View style={styles.container}>
@@ -96,7 +97,7 @@ const SOSScreen = ({ navigation }) => {
         
         <TouchableOpacity 
             style={[styles.sosButton, isLoadingLocation && styles.sosButtonDisabled]} 
-            onPress={handleSOSPress} 
+            onPress={handleSOSPress}
             disabled={isLoadingLocation}
             activeOpacity={0.7}
         >
@@ -128,8 +129,9 @@ const SOSScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#121212' },
-  headerContainer: {
-    paddingVertical: 15,
+  customHeaderContainer: { // Renomeado de headerContainer para evitar conflito com outros estilos
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20, // Adiciona padding para a barra de status no Android
+    paddingBottom: 15, // Padding inferior
     paddingHorizontal: 20,
     alignItems: 'center',
     backgroundColor: '#1C1C1E', 
@@ -214,4 +216,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
 export default SOSScreen;
