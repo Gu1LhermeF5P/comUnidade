@@ -1,55 +1,53 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react'; // Removido alias desnecessários
 import { 
     View,         
     Text,         
-    StyleSheet,   
+    StyleSheet, 
     SafeAreaView, 
     TextInput, 
     FlatList, 
     TouchableOpacity, 
     StatusBar, 
     KeyboardAvoidingView, 
-    Platform,     
+    Platform,     // Importando Platform diretamente
     Alert         
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
-import { useHeaderHeight } from '@react-navigation/elements'; // Para obter a altura do header da Stack
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Removido alias IconChat
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Removido alias AsyncStorageChat
+import { useHeaderHeight } from '@react-navigation/elements'; 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ChatScreen = ({ route, navigation }) => {
-  const { chatId, chatName: initialChatName, isNewChat } = route.params || {}; 
+  const { chatId, chatName, channelDescription, isFixedChannel } = route.params || {}; 
   
   const [messages, setMessages] = useState([]); 
   const [inputText, setInputText] = useState(''); 
-  const [currentChatName, setCurrentChatName] = useState(initialChatName || 'Nova Conversa'); 
-  const MESSAGES_KEY = `@ComUnidade:messages_${chatId}`;
-  const CHATS_KEY_FOR_LIST = '@ComUnidade:chats'; 
-  const headerHeight = useHeaderHeight(); // Obtém a altura do header da Stack Navigator
+  const MESSAGES_KEY = `@ComUnidade:messages_${chatId}`; 
 
   const loadMessages = useCallback(async () => { 
     if (!chatId) return;
     try {
       const storedMessages = await AsyncStorage.getItem(MESSAGES_KEY);
+      let initialMessages = [];
       if (storedMessages !== null) {
-        setMessages(JSON.parse(storedMessages));
-      } else if (isNewChat) {
+        initialMessages = JSON.parse(storedMessages);
+      }
+      
+      if (isFixedChannel && initialMessages.length === 0 && channelDescription) {
         const systemMessage = {
-            id: String(Date.now()), text: `Conversa iniciada com ${currentChatName}.`,
+            id: `system_${chatId}_desc`, text: channelDescription,
             sender: 'system', timestamp: new Date().toISOString(),
         };
-        setMessages([systemMessage]);
+        initialMessages.unshift(systemMessage); 
       }
+      setMessages(initialMessages);
     } catch (e) { console.error("Erro ao carregar mensagens:", e); }
-  }, [chatId, MESSAGES_KEY, isNewChat, currentChatName]);
+  }, [chatId, MESSAGES_KEY, isFixedChannel, channelDescription]);
 
   useEffect(() => { 
     loadMessages();
-    // O título do header agora é definido no App.js nas options da Stack.Screen
-    // Mas podemos atualizar o `currentChatName` se ele mudar após o prompt
-    if (initialChatName !== currentChatName) {
-        navigation.setOptions({ title: currentChatName });
-    }
-  }, [loadMessages, navigation, currentChatName, initialChatName]);
+    navigation.setOptions({ title: chatName || "Canal" });
+  }, [loadMessages, navigation, chatName]);
 
   const saveMessagesToStorage = async (updatedMessages) => { 
     if (!chatId) return;
@@ -59,57 +57,55 @@ const ChatScreen = ({ route, navigation }) => {
   };
   
   const updateChatListSummary = async (lastMessageText) => { 
-    try {
+    if(!chatId || isFixedChannel) return; 
+    // ... (lógica para atualizar AsyncStorage da ChatListScreen, se necessário)
+    const CHATS_KEY_FOR_LIST = '@ComUnidade:chats';
+     try {
         const storedChats = await AsyncStorage.getItem(CHATS_KEY_FOR_LIST);
         let chatsArray = storedChats ? JSON.parse(storedChats) : [];
         const chatIndex = chatsArray.findIndex(c => c.id === chatId);
 
         const chatSummary = {
-            id: chatId, name: currentChatName, 
+            id: chatId, name: chatName, // Usar o chatName passado via params
             lastMessage: lastMessageText, lastMessageTimestamp: new Date().toISOString(),
         };
 
         if (chatIndex > -1) {
-            chatsArray[chatIndex] = chatSummary;
+            chatsArray[chatIndex] = chatSummary; 
         } else {
-            chatsArray.unshift(chatSummary); 
+            // Esta lógica de adicionar um novo chat aqui pode não ser ideal
+            // se a ChatListScreen já não tiver o chat.
+            // Melhor garantir que o chat é criado na ChatListScreen primeiro.
+            // chatsArray.unshift(chatSummary); 
         }
         chatsArray.sort((a,b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp));
-
         await AsyncStorage.setItem(CHATS_KEY_FOR_LIST, JSON.stringify(chatsArray));
-    } catch (e) { console.error("Erro ao atualizar lista de chats:", e); }
+    } catch (e) { console.error("Erro ao atualizar resumo da lista de chats:", e); }
   };
 
   const onSend = useCallback(async () => { 
     if (inputText.trim().length > 0 && chatId) {
       const myUniqueDeviceId = 'me'; 
       const newMessage = {
-        id: String(Date.now()), text: inputText,
-        sender: myUniqueDeviceId, timestamp: new Date().toISOString(),
+        id: String(Date.now()), 
+        text: inputText,
+        sender: myUniqueDeviceId, 
+        timestamp: new Date().toISOString(),
       };
       
-      const updatedMessages = [newMessage, ...messages];
+      const updatedMessages = [newMessage, ...messages]; 
       setMessages(updatedMessages);
       await saveMessagesToStorage(updatedMessages); 
       
-      if (isNewChat && currentChatName === 'Nova Conversa') {
-        Alert.prompt(
-          "Nome da Conversa", "Dê um nome para esta nova conversa:",
-          [{ text: "Cancelar", style: "cancel" },
-           { text: "Guardar", onPress: async (name) => {
-                const finalName = name || `Conversa`;
-                setCurrentChatName(finalName);
-                await updateChatListSummary(inputText); 
-                navigation.setParams({ chatName: finalName, isNewChat: false }); 
-              }
-           }], 'plain-text', currentChatName !== 'Nova Conversa' ? currentChatName : ''
-        );
-      } else {
+      if (!isFixedChannel) {
         await updateChatListSummary(inputText); 
+      } else {
+        console.log(`Mensagem enviada para o canal ${chatName}: ${inputText}`);
+        Alert.alert("Relatório Enviado", "A sua mensagem foi registada localmente.");
       }
       setInputText('');
     }
-  }, [inputText, messages, chatId, saveMessagesToStorage, isNewChat, currentChatName, navigation, updateChatListSummary]);
+  }, [inputText, messages, chatId, saveMessagesToStorage, isFixedChannel, chatName, updateChatListSummary]);
 
   const renderMessageItem = ({ item }) => (
     <View style={[styles.messageBubble, 
@@ -119,7 +115,7 @@ const ChatScreen = ({ route, navigation }) => {
       <Text style={item.sender === 'system' ? styles.systemMessageText : styles.messageText}>
         {item.text}
       </Text>
-      {item.sender !== 'system' && (
+      {item.sender !== 'system' && ( 
         <Text style={styles.messageTimestamp}>
             {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
@@ -127,16 +123,15 @@ const ChatScreen = ({ route, navigation }) => {
     </View>
   );
 
-  // O ScreenHeaderChat foi removido daqui, pois o header agora é gerido pelo StackNavigator no App.js
+  const headerHeight = useHeaderHeight(); 
+  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* A StatusBar hidden={true} está no App.js, então não precisamos de outra aqui */}
-      {/* O header da StackNavigator é usado, então não precisamos do ScreenHeaderChat aqui */}
       <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : undefined} // 'height' pode ser problemático no Android com headers
-        style={styles.keyboardAvoidingContainer}
-        keyboardVerticalOffset={headerHeight + (Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0) } // Ajuste com altura do header e status bar no Android
+        behavior={Platform.OS === "ios" ? "padding" : "height"} // Usando Platform diretamente
+        style={[styles.keyboardAvoidingContainer, { paddingBottom: insets ? insets.bottom : 0 }]} 
+        keyboardVerticalOffset={headerHeight} 
       >
         <FlatList
             data={messages}
@@ -149,7 +144,7 @@ const ChatScreen = ({ route, navigation }) => {
         <View style={styles.inputContainer}>
             <TextInput
             style={styles.textInput}
-            placeholder={"Digite sua mensagem..."}
+            placeholder={isFixedChannel ? "Digite seu relatório/informação..." : "Digite sua mensagem..."}
             placeholderTextColor="#8E8E93"
             value={inputText}
             onChangeText={setInputText}
@@ -164,35 +159,36 @@ const ChatScreen = ({ route, navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#121212' },
-  keyboardAvoidingContainer: { // Novo container para o KeyboardAvoidingView
+const styles = StyleSheet.create({ // Renomeado stylesChat para styles
+  safeArea: { 
+    flex: 1, 
+    backgroundColor: '#121212' 
+  },
+  keyboardAvoidingContainer: {
     flex: 1,
   },
-  // headerContainer: { ... }, // Removido, pois o header é da Stack
   messagesList: { 
     flex: 1, 
     paddingHorizontal: 10,
   },
-  messagesListContent: { // Adicionado para padding na lista invertida
-    paddingTop: 10, // Espaço no topo da lista (que é o fundo visualmente)
-    paddingBottom:10, // Espaço no fundo da lista (que é o topo visualmente)
+  messagesListContent: { 
+    paddingTop: 10, 
   },
   messageBubble: { maxWidth: '80%', padding: 10, borderRadius: 15, marginBottom: 10 },
   userMessage: { backgroundColor: '#0A84FF', alignSelf: 'flex-end', borderBottomRightRadius: 5 },
-  otherMessage: { backgroundColor: '#2C2C2E', alignSelf: 'flex-start', borderBottomLeftRadius: 5 },
-  systemMessage: { backgroundColor: 'transparent', alignSelf: 'center', paddingVertical: 5},
-  systemMessageText: { color: '#AEAEB2', fontStyle:'italic', fontSize:13, textAlign:'center'},
+  otherMessage: { backgroundColor: '#2C2C2E', alignSelf: 'flex-start', borderBottomLeftRadius: 5 }, 
+  systemMessage: { backgroundColor: 'transparent', alignSelf: 'center', paddingVertical: 8, marginHorizontal:10, borderBottomWidth:1, borderBottomColor:'#3A3A3C', marginBottom:10},
+  systemMessageText: { color: '#AEAEB2', fontStyle:'italic', fontSize:14, textAlign:'center', lineHeight: 18},
   messageText: { color: '#FFFFFF', fontSize: 15 },
   messageTimestamp: { color: '#E0E0E0', fontSize: 10, alignSelf: 'flex-end', marginTop: 5 },
   inputContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     paddingHorizontal: 10,
-    paddingVertical: 8, // Ajustado padding
+    paddingVertical: 8, 
     borderTopWidth: 1, 
     borderTopColor: '#3A3A3C', 
-    backgroundColor: '#1C1C1E' 
+    backgroundColor: '#1C1C1E',
   },
   textInput: { 
     flex: 1, 
@@ -200,12 +196,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', 
     borderRadius: 20, 
     paddingHorizontal: 15, 
-    paddingVertical: Platform.OS === 'ios' ? 10 : 8, // Ajuste de padding para diferentes plataformas
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8, // Usando Platform diretamente
     marginRight: 10, 
     fontSize:15, 
     maxHeight:100 
   },
-  sendButton: { paddingLeft: 5 }, // Ajustado padding do botão de enviar
+  sendButton: { paddingLeft: 5 }, 
 });
+
 
 export default ChatScreen;

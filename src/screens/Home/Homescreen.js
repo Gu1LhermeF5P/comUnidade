@@ -73,7 +73,7 @@ const stylesHome = StyleSheet.create({
     padding: 20,
   },
   logo: {
-    width: 150, 
+    width: 0, 
     height: 150, 
     resizeMode: 'contain',
     marginBottom: 20,
