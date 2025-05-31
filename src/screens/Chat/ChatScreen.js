@@ -10,91 +10,57 @@ import {
     StatusBar as StatusBarChat, 
     KeyboardAvoidingView, 
     Platform,
-    Alert as AlertChat
+    // Alert as AlertChat // Não é mais necessário para esta versão simples
 } from 'react-native';
 import IconChat from 'react-native-vector-icons/MaterialCommunityIcons';
-// O serviço P2PService é importado pela ChatListScreen, mas se esta tela for acessada
-// de outra forma, ou para clareza, pode importar P2PService aqui também.
-// import * as P2PService from '../../services/offlineCommunicationService';
-
+// import * as P2PService from '../../services/offlineCommunicationService'; // Removida importação do serviço P2P
 
 const ChatScreen = ({ route, navigation }) => {
-  const { deviceId, deviceName } = route.params || {}; 
-  const [messages, setMessages] = useStateChat([]);
+  const { chatId, chatName } = route.params || {}; 
+  
+  // Mensagens mockadas para este chat específico
+  const [messages, setMessages] = useStateChat([
+    { id: '1', text: `Conversa com ${chatName || 'Utilizador'}`, sender: 'system', timestamp: new Date().toISOString() },
+    { id: '2', text: 'Esta é uma mensagem de exemplo.', sender: 'other', timestamp: new Date(Date.now() - 60000).toISOString() }, // sender 'other'
+    { id: '3', text: 'E esta é a minha resposta!', sender: 'me', timestamp: new Date().toISOString() }, // sender 'me'
+  ]);
   const [inputText, setInputText] = useStateChat('');
-  // O estado da conexão pode ser mais complexo, vindo de um listener do serviço P2P
-  const [isConnected, setIsConnected] = useStateChat(true); // Assume conectado ao entrar na tela
 
+  // Não há mais subscrição a mensagens P2P
   useEffectChatScreen(() => {
-    if (!deviceId) {
-      AlertChat.alert("Erro", "ID do dispositivo não fornecido para o chat. A voltar...");
-      navigation.goBack();
-      return;
-    }
-
-    const onNewMessage = (messageObject) => {
-      console.log("Nova mensagem BLE recebida na ChatScreen:", messageObject);
-      // Adicionar lógica para garantir que a mensagem é deste chat (se o serviço não filtrar)
-      // e para não adicionar a própria mensagem se a biblioteca BLE ecoar.
-      const messageForUi = {
-        id: messageObject.payload.id || String(Date.now()), // Garante um ID
-        text: messageObject.payload.text,
-        sender: messageObject.payload.senderId === 'meuDispositivoId' ? 'me' : 'other', // 'meuDispositivoId' deve ser um ID único do dispositivo atual
-        timestamp: messageObject.payload.timestamp || new Date().toISOString(),
-      };
-      setMessages(prevMessages => [messageForUi, ...prevMessages]);
-    };
-    
-    const unsubscribeFromMessages = P2PService.subscribeToMessages(deviceId, onNewMessage);
-
-    // TODO: Adicionar um listener para atualizações de conexão do P2PService
-    // e atualizar o estado `setIsConnected` com base nisso.
-
+    console.log(`A iniciar chat com ${chatName} (ID: ${chatId})`);
+    // Lógica de limpeza (se houver alguma) pode ir aqui no retorno
     return () => {
-      unsubscribeFromMessages();
-      P2PService.disconnectFromPeer(deviceId); // Desconectar ao sair da tela
+      console.log(`A fechar chat com ${chatName}`);
     };
-  }, [deviceId, navigation]);
+  }, [chatId, chatName]);
 
-  const onSend = useCallbackChat(async () => {
-    if (inputText.trim().length > 0 && isConnected && deviceId) {
-      const myUniqueDeviceId = 'meuDispositivoId'; // Obtenha um ID único para este dispositivo
+  const onSend = useCallbackChat(() => {
+    if (inputText.trim().length > 0) {
+      const myUniqueDeviceId = 'me'; // Simplesmente 'me' para o remetente local
       
-      const messageObject = {
-        type: 'text_message', // Tipo da mensagem para o serviço P2P
-        payload: {
-          id: String(Date.now()), // ID único para a mensagem na UI
-          text: inputText,
-          senderId: myUniqueDeviceId, 
-          timestamp: new Date().toISOString(),
-        }
+      const newMessage = {
+        id: String(Date.now()), 
+        text: inputText,
+        sender: myUniqueDeviceId, 
+        timestamp: new Date().toISOString(),
       };
       
-      // Adiciona à UI localmente (renderização otimista)
-      const messageForUi = {
-        ...messageObject.payload,
-        sender: 'me', 
-      };
-      setMessages(prevMessages => [messageForUi, ...prevMessages]);
-      const currentInput = inputText; // Guarda o texto antes de limpar
+      setMessages(prevMessages => [newMessage, ...prevMessages]); // Adiciona no início para ordem decrescente
       setInputText('');
 
-      try {
-        await P2PService.sendMessage(deviceId, messageObject);
-        console.log("Mensagem enviada via BLE.");
-      } catch (error) {
-        console.error("Erro ao enviar mensagem BLE:", error);
-        AlertChat.alert("Erro de Envio", "Não foi possível enviar a sua mensagem.");
-        // Opcional: Reverter a mensagem na UI ou marcá-la como "não enviada"
-        setMessages(prevMessages => prevMessages.filter(msg => msg.id !== messageForUi.id));
-        setInputText(currentInput); // Restaura o texto no input
-      }
+      console.log("Mensagem adicionada localmente:", newMessage);
+      // Não há chamada a P2PService.sendMessage
     }
-  }, [inputText, messages, deviceId, isConnected]);
+  }, [inputText, messages]); // Removido chatId e isConnected das dependências
 
   const renderMessageItem = ({ item }) => (
     <ViewChat style={[stylesChat.messageBubble, item.sender === 'me' ? stylesChat.userMessage : stylesChat.otherMessage]}>
-      <TextChat style={stylesChat.messageText}>{item.text}</TextChat>
+      {item.sender === 'system' ? (
+         <TextChat style={stylesChat.systemMessageText}>{item.text}</TextChat>
+      ) : (
+        <TextChat style={stylesChat.messageText}>{item.text}</TextChat>
+      )}
       <TextChat style={stylesChat.messageTimestamp}>{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TextChat>
     </ViewChat>
   );
@@ -105,8 +71,8 @@ const ChatScreen = ({ route, navigation }) => {
          <TextChat style={stylesChat.backButtonText}>‹</TextChat>
       </TouchableOpacityChat>
       <ViewChat style={stylesChat.headerTitleContainer}>
-        <TextChat style={stylesChat.headerTitle} numberOfLines={1}>{deviceName || 'Chat'}</TextChat>
-        <ViewChat style={[stylesChat.connectionDot, {backgroundColor: isConnected ? '#4CAF50' : '#D9534F'}]}/>
+        <TextChat style={stylesChat.headerTitle} numberOfLines={1}>{chatName || 'Chat'}</TextChat>
+        {/* Removido indicador de conexão, pois é apenas front-end */}
       </ViewChat>
       <TouchableOpacityChat onPress={() => console.log("Info do chat")} style={stylesChat.actionButton}>
         <IconChat name="information-outline" size={26} color="#FFFFFF" />
@@ -121,7 +87,7 @@ const ChatScreen = ({ route, navigation }) => {
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // Ajuste conforme a altura do seu header
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} 
       >
         <FlatListMessages
             data={messages}
@@ -134,15 +100,14 @@ const ChatScreen = ({ route, navigation }) => {
         <ViewChat style={stylesChat.inputContainer}>
             <TextInputChat
             style={stylesChat.textInput}
-            placeholder={isConnected ? "Digite sua mensagem..." : "A conectar..."}
+            placeholder={"Digite sua mensagem..."}
             placeholderTextColor="#8E8E93"
             value={inputText}
             onChangeText={setInputText}
             multiline
-            editable={isConnected}
             />
-            <TouchableOpacityChat style={stylesChat.sendButton} onPress={onSend} disabled={!isConnected || !inputText.trim()}>
-            <IconChat name="send-circle" size={36} color={!isConnected || !inputText.trim() ? "#555" : "#0A84FF"} />
+            <TouchableOpacityChat style={stylesChat.sendButton} onPress={onSend} disabled={!inputText.trim()}>
+            <IconChat name="send-circle" size={36} color={!inputText.trim() ? "#555" : "#0A84FF"} />
             </TouchableOpacityChat>
         </ViewChat>
       </KeyboardAvoidingView>
@@ -157,12 +122,13 @@ const stylesChat = StyleSheetChat.create({
   backButtonText: { color: '#FFFFFF', fontSize: 28, lineHeight: 28 },
   headerTitleContainer: { flex:1, flexDirection:'row', justifyContent:'center', alignItems:'center', marginHorizontal:5 },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
-  connectionDot: { width:8, height:8, borderRadius:4, marginLeft:8},
+  // connectionDot: { width:8, height:8, borderRadius:4, marginLeft:8}, // Removido
   actionButton: { paddingHorizontal:10, paddingVertical:5 },
   messagesList: { flex: 1, paddingHorizontal: 10 },
   messageBubble: { maxWidth: '80%', padding: 10, borderRadius: 15, marginBottom: 10 },
   userMessage: { backgroundColor: '#0A84FF', alignSelf: 'flex-end', borderBottomRightRadius: 5 },
   otherMessage: { backgroundColor: '#2C2C2E', alignSelf: 'flex-start', borderBottomLeftRadius: 5 },
+  systemMessageText: { color: '#AEAEB2', fontStyle:'italic', fontSize:13, textAlign:'center'},
   messageText: { color: '#FFFFFF', fontSize: 15 },
   messageTimestamp: { color: '#E0E0E0', fontSize: 10, alignSelf: 'flex-end', marginTop: 5 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, borderTopWidth: 1, borderTopColor: '#3A3A3C', backgroundColor: '#1C1C1E' },
