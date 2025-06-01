@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Image, Platform } from 'react-native'; // Adicionado Image e Platform
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AppLogo from '../../assets/logo_comunidade_icon.png'; 
 
 const HomeScreen = ({ navigation }) => {
   return (
@@ -18,7 +17,6 @@ const HomeScreen = ({ navigation }) => {
       </View>
       
       <View style={stylesHome.container}>
-        <Image source={AppLogo} style={stylesHome.logo} />
         <Text style={stylesHome.welcomeText}>Bem-vindo!</Text>
         <Text style={stylesHome.infoText}>Aceda às funcionalidades abaixo para se conectar e manter-se informado.</Text>
         
@@ -44,7 +42,7 @@ const stylesHome = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
   },
-  customHeaderContainer: { // Estilo para o header customizado da HomeScreen
+  customHeaderContainer: { 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

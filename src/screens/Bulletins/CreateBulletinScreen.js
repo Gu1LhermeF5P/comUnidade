@@ -1,21 +1,11 @@
 import React, { useState } from 'react';
 import {
-  SafeAreaView,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  StatusBar, // StatusBar para configurar a do sistema, se necessário
-  Alert,
-  ActivityIndicator,
-  Platform // Para ajustes de padding se necessário
+  SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet,
+  ScrollView, StatusBar, Alert, ActivityIndicator, Platform 
 } from 'react-native';
 import { createBulletin as createBulletinService } from '../../services/bulletinService';
 
 const CreateBulletinScreen = ({ navigation }) => {
-  const [sender, setSender] = useState('');
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [content, setContent] = useState('');
@@ -23,49 +13,40 @@ const CreateBulletinScreen = ({ navigation }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!sender.trim() || !title.trim() || !location.trim() || !content.trim() || !severity) {
-      Alert.alert('Campos Incompletos', 'Por favor, preencha todos os campos e selecione a gravidade.');
+    if (!title.trim() || !location.trim() || !content.trim() || !severity) {
+      Alert.alert('Campos Incompletos', 'Por favor, preencha título, local, descrição e selecione a gravidade.');
       return;
     }
-
     setIsSubmitting(true);
     try {
-      const bulletinData = { sender, title, location, content, severity, timestamp: new Date().toISOString() };
-      const result = await createBulletinService(bulletinData);
+      const bulletinData = { 
+        title, 
+        location, 
+        content, 
+        severity,
+      };
+      const result = await createBulletinService(bulletinData); 
       if (result) {
         Alert.alert('Sucesso!', 'Boletim criado e enviado com sucesso.');
-        navigation.goBack();
+        navigation.goBack(); 
       } else {
-        Alert.alert('Erro ao Criar', 'Não foi possível criar o boletim. Tente novamente.');
+        Alert.alert('Erro ao Criar', 'Não foi possível criar o boletim. Verifique os logs ou tente novamente.');
       }
     } catch (error) {
       console.error("Erro ao criar boletim na tela:", error);
-      Alert.alert('Erro na API', error.message || 'Ocorreu um erro ao comunicar com o servidor. Tente novamente.');
+      const errorMessage = error.response?.data?.message || error.response?.data?.messages?.join(', ') || error.message || 'Ocorreu um erro ao comunicar com o servidor.';
+      Alert.alert('Erro na API', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // O ScreenHeader foi removido daqui, pois o header é fornecido pelo StackNavigator no App.js
-  // navigation.setOptions({ title: 'Criar Boletim' }); // O título já é definido no App.js
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* A StatusBar hidden={true} está no App.js, então não precisamos de outra aqui,
-          a menos que queiramos um estilo específico para esta tela que sobreponha o global.
-          Se o header da Stack Navigator for translúcido ou a StatusBar não estiver oculta,
-          pode ser necessário ajustar o padding superior do ScrollView.
-      */}
-      {/* <StatusBar barStyle="light-content" backgroundColor={styles.container?.backgroundColor || '#121212'} /> */}
-      
       <ScrollView 
         contentContainerStyle={styles.scrollContainer} 
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>REMETENTE</Text>
-          <TextInput style={styles.input} placeholder="Seu nome ou da organização" placeholderTextColor="#6E6E73" value={sender} onChangeText={setSender} editable={!isSubmitting} />
-        </View>
         <View style={styles.formGroup}>
           <Text style={styles.label}>TÍTULO (O QUE HOUVE)</Text>
           <TextInput style={styles.input} placeholder="Ex: Falta de energia na Zona Norte" placeholderTextColor="#6E6E73" value={title} onChangeText={setTitle} editable={!isSubmitting} />
@@ -115,13 +96,12 @@ const CreateBulletinScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({ 
   safeArea: { flex: 1, backgroundColor: '#121212' },
-  scrollContainer: { // Renomeado de container para scrollContainer para evitar confusão
+  scrollContainer: { 
     flexGrow: 1, 
     paddingHorizontal: 20, 
-    paddingVertical: 20, // Adicionado padding vertical para o conteúdo do scroll
+    paddingVertical: 20, 
     backgroundColor: '#121212' 
   },
-  // headerContainer: { ... }, // Removido, pois o header é da Stack Navigator
   formGroup: { marginBottom: 20 },
   label: { fontSize: 14, color: '#AEAEB2', marginBottom: 8, fontWeight: '600', textTransform: 'uppercase' },
   input: { backgroundColor: '#2C2C2E', color: '#FFFFFF', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, borderWidth: 1, borderColor: '#3A3A3C' },
@@ -136,8 +116,6 @@ const styles = StyleSheet.create({
   submitButton: { backgroundColor: '#0A84FF', paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginTop: 20, height:50, justifyContent:'center' },
   submitButtonDisabled: { backgroundColor: '#555555'},
   submitButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  // container: { backgroundColor: '#121212' }, // Estilo para StatusBar, se necessário, mas o safeArea já define
 });
-
 
 export default CreateBulletinScreen;

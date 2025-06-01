@@ -1,140 +1,147 @@
 import React, { useEffect, useState, useCallback } from 'react'; 
 import {
-  SafeAreaView, // Removido alias
-  View,         // Removido alias
-  Text,         // Removido alias
+  SafeAreaView, 
+  View,
+  Text,
   FlatList,
-  TouchableOpacity, // Removido alias
-  StyleSheet,     // Removido alias
-  StatusBar,      // Removido alias
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar, 
   ActivityIndicator, 
-  RefreshControl, 
-  Platform      // Adicionado Platform
+  RefreshControl,
+  Platform
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Removido alias
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { getBulletins } from '../../services/bulletinService'; 
 
 const BulletinItem = ({ item, onPress }) => {
   let iconColor = '#4ECDC4'; 
-  if (item.severity === 'critical' || item.severity === 'Alerta') {
+  let itemSeverity = item.severity || 'Info'; 
+
+  if (itemSeverity.toLowerCase() === 'critical' || itemSeverity.toLowerCase() === 'alerta') {
     iconColor = '#FF6B6B'; 
-  } else if (item.severity === 'warning' || item.severity === 'Cuidado') {
+  } else if (itemSeverity.toLowerCase() === 'warning' || itemSeverity.toLowerCase() === 'cuidado') {
     iconColor = '#FFD166'; 
   }
 
-  const formattedTimestamp = item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-  const timeAgo = item.timeAgo || (item.timestamp ? new Date(item.timestamp).toLocaleDateString() : '');
-
+  const formattedTimestamp = item.timestamp 
+    ? new Date(item.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) 
+    : 'N/A';
+  const formattedDate = item.timestamp 
+    ? new Date(item.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) 
+    : '';
 
   return (
-    <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
-      <View style={[styles.itemIconContainer, { backgroundColor: iconColor }]}>
+    <TouchableOpacity style={stylesBulletins.itemContainer} onPress={onPress}>
+      <View style={[stylesBulletins.itemIconContainer, { backgroundColor: iconColor }]}>
         <Icon name="alert-circle-outline" size={28} color="#FFFFFF" />
       </View>
-      <View style={styles.itemTextContainer}>
-        <Text style={styles.itemSender}>{item.sender || item.title || 'Boletim'}</Text>
-        <Text style={styles.itemTitle} numberOfLines={1}>{item.location || item.content?.substring(0,50) || 'Detalhes não disponíveis'}</Text>
+      <View style={stylesBulletins.itemTextContainer}>
+        <Text style={stylesBulletins.itemSender}>{item.username || item.title || 'Boletim'}</Text> 
+        <Text style={stylesBulletins.itemTitle} numberOfLines={1}>{item.location || item.content?.substring(0,50) || 'Detalhes não disponíveis'}</Text>
       </View>
-      <View style={styles.itemTimeContainer}>
-        <Text style={styles.itemTimestamp}>{formattedTimestamp}</Text>
-        {timeAgo ? <Text style={styles.itemTimeAgo}>{timeAgo}</Text> : null}
+      <View style={stylesBulletins.itemTimeContainer}>
+        <Text style={stylesBulletins.itemTimestamp}>{formattedTimestamp}</Text>
+        {formattedDate ? <Text style={stylesBulletins.itemTimeAgo}>{formattedDate}</Text> : null}
       </View>
     </TouchableOpacity>
   );
 };
 
-
 const ScreenHeaderBulletins = ({ navigation }) => ( 
-  <View style={styles.customHeaderContainer}> {/* Aplicando estilo do header customizado */}
-    <View style={styles.headerIconPlaceholder} /> {/* Placeholder para alinhar o título */}
-    <Text style={styles.customHeaderTitle}>Boletins</Text> {/* Título com estilo customizado */}
-    <TouchableOpacity onPress={() => navigation.navigate('CreateBulletin')} style={styles.headerActionButton}>
+  <View style={stylesBulletins.customHeaderContainer}>
+    <View style={stylesBulletins.headerIconPlaceholder} />
+    <Text style={stylesBulletins.customHeaderTitle}>Boletins</Text>
+    <TouchableOpacity onPress={() => navigation.navigate('CreateBulletin')} style={stylesBulletins.headerActionButton}>
       <Icon name="plus-circle-outline" size={28} color="#0A84FF" />
     </TouchableOpacity>
   </View>
 );
 
 const BulletinsListScreen = ({ navigation }) => {
-  const [bulletins, setBulletins] = useState([]); // Removido alias setBulletinsLocal
-  const [isLoading, setIsLoading] = useState(false); // Removido alias setIsLoadingLocal
-  const [error, setError] = useState(null); // Removido alias setErrorLocal
-  const [isRefreshing, setIsRefreshing] = useState(false); // Removido alias setIsRefreshingLocal
+  const [bulletins, setBulletins] = useState([]); 
+  const [isLoading, setIsLoading] = useState(false); 
+  const [error, setError] = useState(null); 
+  const [isRefreshing, setIsRefreshing] = useState(false); 
 
   const fetchBulletinsData = useCallback(async () => { 
-    setIsLoading(true);
+    if(!isRefreshing) setIsLoading(true);
     setError(null);
     try {
-      const data = await getBulletins(); 
-      if (data) {
-        const sortedData = data.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-        setBulletins(sortedData);
-      } else {
-        setBulletins([]);
+      const response = await getBulletins(); 
+      if (response && response.content) { 
+        setBulletins(response.content);
+      } else if (Array.isArray(response)) { 
+        setBulletins(response.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0)));
+      }
+      else {
+        setBulletins([]); 
+        console.warn("Resposta da API de boletins não está no formato esperado:", response);
       }
     } catch (e) {
-      console.error("Erro na tela ao buscar boletins:", e);
+      console.error("Erro na tela ao buscar boletins da API:", e);
       setError(e.message || 'Ocorreu um erro ao buscar os boletins. Tente novamente.');
       setBulletins([]); 
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }, []);
+  }, [isRefreshing]); 
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchBulletinsData();
     });
-    fetchBulletinsData();
     return unsubscribe; 
   }, [navigation, fetchBulletinsData]);
 
-
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await fetchBulletinsData();
-    setIsRefreshing(false);
+    await fetchBulletinsData(); 
   }, [fetchBulletinsData]);
 
   const handleBulletinPress = (bulletin) => {
-    navigation.navigate('BulletinDetail', { bulletinData: bulletin });
+    navigation.navigate('BulletinDetail', { bulletinData: bulletin, bulletinId: bulletin.id }); 
   };
 
   if (isLoading && bulletins.length === 0 && !isRefreshing) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={stylesBulletins.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor={'#121212'} />
         <ScreenHeaderBulletins navigation={navigation} />
-        <View style={styles.centeredMessageContainer}>
+        <View style={stylesBulletins.centeredMessageContainer}>
           <ActivityIndicator size="large" color="#0A84FF" />
-          <Text style={styles.loadingText}>A carregar boletins...</Text>
+          <Text style={stylesBulletins.loadingText}>A carregar boletins da API...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={styles.container?.backgroundColor || '#121212'} />
+    <SafeAreaView style={stylesBulletins.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor={'#121212'} />
       <ScreenHeaderBulletins navigation={navigation} />
       {error && !isRefreshing && ( 
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={fetchBulletinsData} style={styles.retryButton}>
-            <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+        <View style={stylesBulletins.errorContainer}>
+          <Text style={stylesBulletins.errorText}>{error}</Text>
+          <TouchableOpacity onPress={fetchBulletinsData} style={stylesBulletins.retryButton}>
+            <Text style={stylesBulletins.retryButtonText}>Tentar Novamente</Text>
           </TouchableOpacity>
         </View>
       )}
       <FlatList
-        data={bulletins}
+        data={bulletins} 
         renderItem={({ item }) => (
           <BulletinItem item={item} onPress={() => handleBulletinPress(item)} />
         )}
         keyExtractor={(item) => String(item.id)} 
-        contentContainerStyle={styles.listContentContainer}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        contentContainerStyle={stylesBulletins.listContentContainer}
+        ItemSeparatorComponent={() => <View style={stylesBulletins.separator} />}
         ListEmptyComponent={() => (
           !isLoading && !error && ( 
-            <View style={styles.centeredMessageContainer}>
-              <Text style={styles.emptyListText}>Nenhum boletim encontrado.</Text>
+            <View style={stylesBulletins.centeredMessageContainer}>
+              <Icon name="information-off-outline" size={60} color="#555"/>
+              <Text style={stylesBulletins.emptyListText}>Nenhum boletim encontrado na API.</Text>
             </View>
           )
         )}
@@ -151,10 +158,8 @@ const BulletinsListScreen = ({ navigation }) => {
   );
 };
 
-// Renomeado stylesBulletins para styles
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#121212' }, // Cor de fundo da SafeAreaView
-  // Estilos do header customizado (copiados/adaptados do HomeScreen e ChatListScreen)
+const stylesBulletins = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#121212' },
   customHeaderContainer: { 
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -162,7 +167,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20,
     paddingBottom: 15,
     paddingHorizontal: 15,
-    backgroundColor: '#1C1C1E', // Cor de fundo do header
+    backgroundColor: '#1C1C1E', 
     borderBottomWidth: 1,
     borderBottomColor: '#3A3A3C',
   },
@@ -170,16 +175,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    // flex: 1, // Removido para melhor alinhamento com placeholders
-    // textAlign: 'center', 
   },
-  headerIconPlaceholder: { // Para alinhar o título se não houver ícone à esquerda
-    width: 28, // Deve corresponder à largura do ícone da direita
+  headerIconPlaceholder: { 
+    width: 28, 
   },
-  headerActionButton: { // Para o botão de ação (ícone de +)
+  headerActionButton: { 
     padding: 5, 
   },
-  // Estilos restantes da BulletinsListScreen
   listContentContainer: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 20, flexGrow: 1 }, 
   itemContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2C2C2E', padding: 15, borderRadius: 10 },
   itemIconContainer: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
@@ -196,8 +198,8 @@ const styles = StyleSheet.create({
   errorText: { color: '#D8000C', fontSize: 15, textAlign: 'center', marginBottom:10 },
   retryButton: { backgroundColor: '#0A84FF', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 5 },
   retryButtonText: { color: '#FFFFFF', fontWeight: 'bold' },
-  emptyListText: { fontSize: 16, color: '#AEAEB2', textAlign: 'center' },
-  container: { backgroundColor: '#1C1C1E' }, // Usado para a cor de fundo da StatusBar
+  emptyListText: { fontSize: 16, color: '#AEAEB2', textAlign: 'center', marginTop: 10 },
+  container: { backgroundColor: '#121212' }, 
 });
 
 export default BulletinsListScreen;
