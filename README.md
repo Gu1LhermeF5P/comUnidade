@@ -1,3 +1,12 @@
+#   ComUnidade - Global Solution FIAP 📱
+## 👥 Integrantes
+
+- **Nome:** Guilherme Francisco   
+  **RM:** 554678 
+- **Nome:** Larissa de Freitas
+  **RM:** 555136
+- **Nome:** João Victor Rebello de Santis  
+  **RM:** 555287
 ## 📺 Link para o Vídeo de Demonstração no YouTube
 
 [LINK_PARA_SEU_VIDEO_NO_YOUTUBE]
