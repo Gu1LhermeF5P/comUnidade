@@ -1,15 +1,6 @@
 import React, { useState as useStateDetail, useEffect as useEffectDetail, useCallback as useCallbackDetail } from 'react'; // Removido alias useCallbackDetailDetail
-import { 
-    View,         // Removido alias
-    Text,         // Removido alias
-    StyleSheet,   // Removido alias
-    SafeAreaView, // Removido alias
-    ScrollView,   // Removido alias
-    TouchableOpacity, // Removido alias
-    StatusBar,    // Removido alias
-    Alert,        // Removido alias
-    ActivityIndicator, // Removido alias
-    RefreshControl // Adicionado RefreshControl
+import { View, Text,StyleSheet, SafeAreaView, ScrollView, TouchableOpacity,StatusBar, 
+Alert,ActivityIndicator, RefreshControl 
 } from 'react-native';
 import { getBulletinById, deleteBulletin as deleteBulletinService } from '../../services/bulletinService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Usando Icon padrão
@@ -18,7 +9,7 @@ const BulletinDetailScreen = ({ route, navigation }) => {
   const { bulletinData: initialBulletinData, bulletinId: initialBulletinId } = route.params || {};
   const [bulletin, setBulletin] = useStateDetail(initialBulletinData);
   const [isLoading, setIsLoading] = useStateDetail(!initialBulletinData && !!initialBulletinId); // Renomeado para isLoading
-  const [error, setError] = useStateDetail(null); // Renomeado para error
+  const [error, setError] = useStateDetail(null); 
 
   const fetchDetails = useCallbackDetail(async (idToFetch) => {
     if (!idToFetch) {
@@ -81,7 +72,7 @@ const BulletinDetailScreen = ({ route, navigation }) => {
               await deleteBulletinService(bulletin.id);
               Alert.alert("Sucesso", "Boletim excluído com sucesso.");
               navigation.goBack(); 
-            } catch (err) { // Renomeado 'error' para 'err' para evitar conflito com estado 'error'
+            } catch (err) { 
               console.error("Erro ao excluir boletim:", err);
               Alert.alert("Erro", err.message || "Não foi possível excluir o boletim.");
               setIsLoading(false);
@@ -189,7 +180,7 @@ const BulletinDetailScreen = ({ route, navigation }) => {
   );
 };
 
-const stylesDetail = StyleSheet.create({ // Mudado de StyleSheetDetail para StyleSheet
+const stylesDetail = StyleSheet.create({ 
   safeArea: { flex: 1, backgroundColor: '#121212' },
   container: { flex: 1, padding: 20 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: '#3A3A3C', backgroundColor: '#1C1C1E' },

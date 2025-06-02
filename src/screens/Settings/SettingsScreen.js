@@ -1,15 +1,7 @@
 import React from 'react'; 
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    SafeAreaView, 
-    TouchableOpacity, 
-    ScrollView, 
-    StatusBar, // Importado StatusBar diretamente
-    Alert // Importado Alert diretamente
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, StatusBar, Alert 
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Usando Icon padrão
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 
 const SettingItem = ({ icon, title, onPress }) => (
     <TouchableOpacity style={styles.itemContainer} onPress={onPress}>

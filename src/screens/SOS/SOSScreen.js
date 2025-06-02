@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    SafeAreaView, 
-    TouchableOpacity, 
-    Alert, 
-    StatusBar, 
-    ActivityIndicator,
-    Linking, 
-    Platform 
+import { View, Text, StyleSheet, SafeAreaView,TouchableOpacity, Alert, StatusBar, ActivityIndicator,Linking, Platform 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Location from 'expo-location'; 
@@ -129,9 +119,9 @@ const SOSScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#121212' },
-  customHeaderContainer: { // Renomeado de headerContainer para evitar conflito com outros estilos
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20, // Adiciona padding para a barra de status no Android
-    paddingBottom: 15, // Padding inferior
+  customHeaderContainer: { 
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20, 
+    paddingBottom: 15, 
     paddingHorizontal: 20,
     alignItems: 'center',
     backgroundColor: '#1C1C1E', 

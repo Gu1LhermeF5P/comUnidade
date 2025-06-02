@@ -1,19 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react'; // Removido alias desnecessários
-import { 
-    View,         
-    Text,         
-    StyleSheet, 
-    SafeAreaView, 
-    TextInput, 
-    FlatList, 
-    TouchableOpacity, 
-    StatusBar, 
-    KeyboardAvoidingView, 
-    Platform,     // Importando Platform diretamente
-    Alert         
+import React, { useState, useCallback, useEffect } from 'react'; 
+import { View,Text,StyleSheet, SafeAreaView, TextInput, FlatList, TouchableOpacity, 
+StatusBar, KeyboardAvoidingView, Platform,Alert         
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Removido alias IconChat
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Removido alias AsyncStorageChat
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { useHeaderHeight } from '@react-navigation/elements'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -58,7 +48,7 @@ const ChatScreen = ({ route, navigation }) => {
   
   const updateChatListSummary = async (lastMessageText) => { 
     if(!chatId || isFixedChannel) return; 
-    // ... (lógica para atualizar AsyncStorage da ChatListScreen, se necessário)
+    
     const CHATS_KEY_FOR_LIST = '@ComUnidade:chats';
      try {
         const storedChats = await AsyncStorage.getItem(CHATS_KEY_FOR_LIST);
@@ -66,17 +56,14 @@ const ChatScreen = ({ route, navigation }) => {
         const chatIndex = chatsArray.findIndex(c => c.id === chatId);
 
         const chatSummary = {
-            id: chatId, name: chatName, // Usar o chatName passado via params
+            id: chatId, name: chatName, 
             lastMessage: lastMessageText, lastMessageTimestamp: new Date().toISOString(),
         };
 
         if (chatIndex > -1) {
             chatsArray[chatIndex] = chatSummary; 
         } else {
-            // Esta lógica de adicionar um novo chat aqui pode não ser ideal
-            // se a ChatListScreen já não tiver o chat.
-            // Melhor garantir que o chat é criado na ChatListScreen primeiro.
-            // chatsArray.unshift(chatSummary); 
+            
         }
         chatsArray.sort((a,b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp));
         await AsyncStorage.setItem(CHATS_KEY_FOR_LIST, JSON.stringify(chatsArray));
@@ -159,7 +146,7 @@ const ChatScreen = ({ route, navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({ // Renomeado stylesChat para styles
+const styles = StyleSheet.create({ 
   safeArea: { 
     flex: 1, 
     backgroundColor: '#121212' 

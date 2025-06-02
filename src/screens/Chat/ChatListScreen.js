@@ -1,19 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    SafeAreaView, 
-    FlatList, 
-    TouchableOpacity, 
-    StatusBar, 
-    Alert,
-    Platform 
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, StatusBar, Alert,Platform 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CHATS_STORAGE_KEY = '@ComUnidade:chats'; // Armazena resumos de todas as conversas com atividade
+const CHATS_STORAGE_KEY = '@ComUnidade:chats'; 
 const BOMBEIROS_CHAT_ID = 'fixed_channel_bombeiros'; 
 const DEFESA_CIVIL_CHAT_ID = 'fixed_channel_defesacivil';
 
@@ -24,8 +15,8 @@ const FIXED_CHANNELS = [
         icon: 'fire-truck',
         avatarColor: '#D9534F',
         description: 'Envie informações sobre incêndios, resgates, etc. As suas mensagens ficam registadas localmente.',
-        lastMessage: 'Toque para enviar um relatório ou informação.', // Mensagem padrão
-        lastMessageTimestamp: new Date(0).toISOString(), // Timestamp muito antigo para ser sobrescrito
+        lastMessage: 'Toque para enviar um relatório ou informação.', 
+        lastMessageTimestamp: new Date(0).toISOString(), 
     },
     {
         id: DEFESA_CIVIL_CHAT_ID,
@@ -33,8 +24,8 @@ const FIXED_CHANNELS = [
         icon: 'shield-alert-outline',
         avatarColor: '#0A84FF',
         description: 'Canal para visualizar informações e alertas importantes da Defesa Civil (simulado).',
-        lastMessage: 'Verifique aqui por alertas e informações oficiais.', // Mensagem padrão
-        lastMessageTimestamp: new Date(0).toISOString(), // Timestamp muito antigo
+        lastMessage: 'Verifique aqui por alertas e informações oficiais.', 
+        lastMessageTimestamp: new Date(0).toISOString(),
     }
 ];
 
@@ -74,24 +65,24 @@ const ChatListScreen = ({ navigation }) => {
       const storedChatSummaries = await AsyncStorage.getItem(CHATS_STORAGE_KEY);
       let chatSummariesArray = storedChatSummaries ? JSON.parse(storedChatSummaries) : [];
       
-      // Mapeia os canais fixos, atualizando com a última mensagem e timestamp do AsyncStorage se existir
+      
       const finalChannels = FIXED_CHANNELS.map(fixedChannel => {
           const storedSummary = chatSummariesArray.find(summary => summary.id === fixedChannel.id);
           if (storedSummary) {
-            // Encontrou um resumo guardado para este canal fixo, usa a última mensagem e timestamp dele
+            
             return { 
-                ...fixedChannel, // Mantém nome, ícone, cor, descrição do FIXED_CHANNELS
+                ...fixedChannel, 
                 lastMessage: storedSummary.lastMessage, 
                 lastMessageTimestamp: storedSummary.lastMessageTimestamp 
             };
           }
-          return fixedChannel; // Nenhuma interação guardada, usa os dados padrão do FIXED_CHANNELS
+          return fixedChannel; 
       }).sort((a,b) => new Date(b.lastMessageTimestamp || 0) - new Date(a.lastMessageTimestamp || 0));
 
       setChannels(finalChannels);
     } catch (e) {
       console.error("Erro ao carregar canais/conversas:", e);
-      // Em caso de erro, pode ser útil mostrar os canais fixos com dados padrão
+      
       setChannels(FIXED_CHANNELS.sort((a,b) => new Date(b.lastMessageTimestamp || 0) - new Date(a.lastMessageTimestamp || 0)));
     }
   }, []);

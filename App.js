@@ -7,7 +7,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider, SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
-// Importe as suas telas aqui (certifique-se que os caminhos estão corretos)
+
 import HomeScreen from './src/screens/Home/Homescreen';
 import BulletinsListScreen from './src/screens/Bulletins/BulletinsListScreen';
 import CreateBulletinScreen from './src/screens/Bulletins/CreateBulletinScreen';
@@ -20,7 +20,7 @@ import SettingsScreen from './src/screens/Settings/SettingsScreen';
 import MapScreen from './src/screens/Map/MapScreen';
 
 
-// Ignorar um aviso comum que pode aparecer com a navegação por abas
+
 LogBox.ignoreLogs([
   'Sending `onAnimatedValueUpdate` with no listeners registered.',
 ]);
@@ -28,7 +28,7 @@ LogBox.ignoreLogs([
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tema Escuro Personalizado
+
 const AppDarkTheme = {
   ...DarkTheme,
   colors: {
@@ -42,7 +42,7 @@ const AppDarkTheme = {
   },
 };
 
-// Navegação por Abas Inferiores
+
 function MainTabs() {
   return (
     <SafeAreaInsetsContext.Consumer>
@@ -89,7 +89,7 @@ function MainTabs() {
 
 const ONBOARDING_COMPLETED_KEY = '@ComUnidade:onboardingCompleted';
 
-// Navegador Principal da Aplicação (Stack)
+
 function AppNavigator() {
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
@@ -180,7 +180,7 @@ function AppNavigator() {
   );
 }
 
-// Componente App principal
+
 export default function App() {
   return (
     <SafeAreaProvider>
@@ -192,7 +192,7 @@ export default function App() {
   );
 }
 
-// Estilos para o ecrã de carregamento
+
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,

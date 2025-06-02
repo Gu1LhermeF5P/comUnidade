@@ -1,24 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    SafeAreaView, 
-    TouchableOpacity, 
-    StatusBar, 
-    Image, 
-    // ScrollView, // Removido ScrollView principal
-    TextInput, 
-    Alert,
-    Modal,
-    Platform,
-    FlatList 
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Image, ScrollView, 
+TextInput, Alert,Modal,Platform,FlatList
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker'; 
 
-
-const MAP_IMAGE_URI_KEY = '@ComUnidade:localMapImageUri';
+const MAP_IMAGE_URI_KEY = '@ComUnidade:localMapImageUri'; 
 const MAP_POINTS_STORAGE_KEY = '@ComUnidade:mapPoints';
 
 const CATEGORIES = [
@@ -39,7 +27,7 @@ const getCategoryDetails = (categoryName) => {
 const PointOfInterestItem = ({ point, onDelete }) => {
     const categoryDetails = getCategoryDetails(point.category);
     return (
-        <View style={styles.pointItemContainer}>
+        <View style={[styles.pointItemContainer, { borderLeftColor: categoryDetails.color }]}>
             <View style={styles.pointItemHeader}>
                 <Icon name={categoryDetails.icon} size={24} color={categoryDetails.color} style={styles.pointItemIcon} />
                 <Text style={styles.pointItemTitle}>{point.title}</Text>
@@ -55,13 +43,14 @@ const PointOfInterestItem = ({ point, onDelete }) => {
 };
 
 const MapScreen = ({ navigation }) => {
-  const [localMapImageUri, setLocalMapImageUri] = useState(null);
+  const [localMapImageUri, setLocalMapImageUri] = useState(null); 
   const [pointsOfInterest, setPointsOfInterest] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newPointTitle, setNewPointTitle] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0].name); 
   const [newPointNotes, setNewPointNotes] = useState('');
 
+  
   const loadMapData = useCallback(async () => {
     try {
       const storedImageUri = await AsyncStorage.getItem(MAP_IMAGE_URI_KEY);
@@ -79,7 +68,7 @@ const MapScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadMapData();
-    const unsubscribe = navigation.addListener('focus', loadMapData);
+    const unsubscribe = navigation.addListener('focus', loadMapData); 
     return unsubscribe;
   }, [navigation, loadMapData]);
 
@@ -92,31 +81,35 @@ const MapScreen = ({ navigation }) => {
     }
   };
 
-   const pickImage = async () => {
+  
+  const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permissionResult.granted === false) {
       Alert.alert("Permissão Necessária", "Você precisa de conceder acesso à galeria para selecionar uma imagem de mapa.");
       return;
     }
+
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, 
-      aspect: [16, 9], // Proporção mais paisagem para mapas
-      quality: 0.8, 
+      allowsEditing: true,
+      aspect: [16, 9], 
+      quality: 0.8,
     });
+
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const selectedImageUri = result.assets[0].uri;
       setLocalMapImageUri(selectedImageUri);
       try {
         await AsyncStorage.setItem(MAP_IMAGE_URI_KEY, selectedImageUri);
-        Alert.alert("Mapa Atualizado", "A imagem do mapa local foi atualizada!");
+        Alert.alert("Mapa Atualizado", "A imagem do mapa local foi atualizada com sucesso!");
       } catch (e) {
         console.error("Erro ao guardar URI da imagem do mapa:", e);
-        Alert.alert("Erro", "Não foi possível guardar a imagem do mapa.");
+        Alert.alert("Erro", "Não foi possível guardar a imagem do mapa selecionada.");
       }
     }
   };
 
+  
   const handleClearMapImage = async () => {
     Alert.alert(
         "Remover Mapa",
@@ -127,7 +120,7 @@ const MapScreen = ({ navigation }) => {
                 setLocalMapImageUri(null);
                 try {
                     await AsyncStorage.removeItem(MAP_IMAGE_URI_KEY);
-                } catch (e) { console.error("Erro ao remover URI:", e); }
+                } catch (e) { console.error("Erro ao remover URI da imagem do mapa:", e); }
             }}
         ]
     );
@@ -139,24 +132,32 @@ const MapScreen = ({ navigation }) => {
       return;
     }
     const newPoint = {
-      id: String(Date.now()), title: newPointTitle, category: selectedCategory,
-      notes: newPointNotes, timestamp: new Date().toISOString(),
+      id: String(Date.now()),
+      title: newPointTitle,
+      category: selectedCategory,
+      notes: newPointNotes,
+      timestamp: new Date().toISOString(),
     };
     const updatedPoints = [newPoint, ...pointsOfInterest].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
     setPointsOfInterest(updatedPoints);
     savePoints(updatedPoints);
     setModalVisible(false);
-    setNewPointTitle(''); setSelectedCategory(CATEGORIES[0].name); setNewPointNotes('');
+    setNewPointTitle('');
+    setSelectedCategory(CATEGORIES[0].name);
+    setNewPointNotes('');
   };
 
   const handleDeletePoint = (id) => {
-    Alert.alert( "Confirmar Exclusão", "Tem a certeza que deseja excluir este ponto?",
-        [ {text: "Cancelar", style: "cancel"},
-          {text: "Excluir", style: "destructive", onPress: () => {
-              const updatedPoints = pointsOfInterest.filter(point => point.id !== id);
-              setPointsOfInterest(updatedPoints);
-              savePoints(updatedPoints);
-          }}
+    Alert.alert(
+        "Confirmar Exclusão",
+        "Tem a certeza que deseja excluir este ponto de interesse?",
+        [
+            {text: "Cancelar", style: "cancel"},
+            {text: "Excluir", style: "destructive", onPress: () => {
+                const updatedPoints = pointsOfInterest.filter(point => point.id !== id);
+                setPointsOfInterest(updatedPoints);
+                savePoints(updatedPoints);
+            }}
         ]
     );
   };
@@ -172,7 +173,7 @@ const MapScreen = ({ navigation }) => {
       </TouchableOpacity>
     </View>
   );
-
+  
   const renderListHeader = () => (
     <>
       <View style={styles.mapActionsContainer}>
@@ -193,9 +194,13 @@ const MapScreen = ({ navigation }) => {
         ) : (
           <View style={styles.mapPlaceholder}>
             <Icon name="map-search-outline" size={60} color="#555" />
-            <Text style={styles.mapPlaceholderText}>Nenhum Mapa Local</Text>
-            <Text style={styles.mapPlaceholderSubText}>Toque em "Selecionar Mapa" acima.</Text>
-            <Text style={styles.mapInstructionText}>Dica: Use Google Maps (offline) e tire um screenshot.</Text>
+            <Text style={styles.mapPlaceholderText}>Nenhum Mapa Local Selecionado</Text>
+            <Text style={styles.mapPlaceholderSubText}>
+              Toque em "Selecionar Mapa" acima para escolher uma imagem da sua galeria.
+            </Text>
+            <Text style={styles.mapInstructionText}>
+              Dica: Use o Google Maps para fazer download de uma área offline e tire um screenshot.
+            </Text>
           </View>
         )}
       </View>
@@ -209,19 +214,18 @@ const MapScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={'#1C1C1E'} />
       <ScreenHeaderMap />
-      {/* A FlatList agora é o container de scroll principal */}
       <FlatList
         data={pointsOfInterest}
         renderItem={({item}) => <PointOfInterestItem point={item} onDelete={handleDeletePoint} />}
         keyExtractor={item => item.id}
-        ListHeaderComponent={renderListHeader} // Conteúdo acima da lista
-        ListEmptyComponent={ // Mostrado se a lista de dados estiver vazia (mas o header ainda aparece)
+        ListHeaderComponent={renderListHeader}
+        ListEmptyComponent={ 
             <View style={styles.emptyPointsContainer}>
                 <Icon name="information-off-outline" size={40} color="#555" />
                 <Text style={styles.emptyPointsText}>Nenhum ponto adicionado ainda. Toque em (+) no cabeçalho para adicionar.</Text>
             </View>
         }
-        contentContainerStyle={styles.listContentContainer} // Estilo para o container interno da FlatList
+        contentContainerStyle={styles.listContentContainer}
       />
 
       <Modal
@@ -287,10 +291,9 @@ const styles = StyleSheet.create({
   backButtonText: { color: '#FFFFFF', fontSize: 28, lineHeight: 28 },
   headerTitle: { flex:1, textAlign:'center', fontSize: 20, fontWeight: 'bold', color: '#FFFFFF' },
   actionButtonHeader: { padding: 10 },
-  // scrollViewContainer: { flex: 1 }, // Removido
-  listContentContainer: { // Estilo para o container interno da FlatList se precisar de padding
-    paddingHorizontal:15, 
-    paddingBottom: 15,
+  
+  listContentContainer: { 
+    paddingBottom: 15, 
   },
   mapActionsContainer: { 
     flexDirection: 'row',
@@ -321,8 +324,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2C2C2E',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 10, // Adicionado margin vertical em vez de só margin
-    marginHorizontal: 15, // Adicionado para consistência com pointsListSection
+    marginVertical: 10, 
+    marginHorizontal: 15, 
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#3A3A3C',
@@ -331,7 +334,7 @@ const styles = StyleSheet.create({
   },
   mapImage: {
     width: '100%',
-    height: 210, // Altura fixa para a imagem dentro do container
+    height: 210, 
   },
   mapPlaceholder: {
     justifyContent: 'center',
@@ -342,9 +345,9 @@ const styles = StyleSheet.create({
   mapPlaceholderSubText: { fontSize: 13, color: '#AEAEB2', marginTop:5, textAlign:'center', marginBottom: 8 }, 
   mapInstructionText: { fontSize: 12, color: '#E0E0E0', textAlign:'center', width: '100%', marginBottom:4, lineHeight: 16}, 
   
-  pointsListSectionHeader: { // Para o título da lista de pontos, fora da FlatList mas dentro do ListHeaderComponent
+  pointsListSectionHeader: { 
     paddingHorizontal: 15, 
-    paddingTop: 10, // Espaço acima do título
+    paddingTop: 10, 
   },
   pointsListTitle: {
     fontSize: 18,
@@ -354,8 +357,9 @@ const styles = StyleSheet.create({
   },
   emptyPointsContainer: { 
     alignItems: 'center',
-    paddingTop: 30, // Ajustado padding
+    paddingTop: 30, 
     paddingBottom:20,
+    paddingHorizontal: 15, 
   },
   emptyPointsText: {
     fontSize: 15,
@@ -369,6 +373,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12, 
     borderLeftWidth: 5,
+    marginHorizontal: 15,
   },
   pointItemHeader: {
     flexDirection: 'row',
@@ -490,6 +495,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   }
-}); 
+});
 
 export default MapScreen;

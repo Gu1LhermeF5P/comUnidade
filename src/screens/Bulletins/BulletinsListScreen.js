@@ -1,15 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'; 
-import {
-  SafeAreaView, 
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar, 
-  ActivityIndicator, 
-  RefreshControl,
-  Platform
+import {SafeAreaView, View,Text,FlatList,TouchableOpacity,StyleSheet,StatusBar, 
+ActivityIndicator, RefreshControl,Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { getBulletins } from '../../services/bulletinService'; 

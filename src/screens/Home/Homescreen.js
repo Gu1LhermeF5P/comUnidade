@@ -1,14 +1,15 @@
+
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Image, Platform } from 'react-native'; // Adicionado Image e Platform
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Image, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+import AppLogo from '../../assets/logo_comunidade_icon.png'; 
 
 const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={stylesHome.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#121212" /> 
-      {/* Header Customizado para HomeScreen */}
       <View style={stylesHome.customHeaderContainer}>
-        {/* Espaço para um botão de voltar ou menu, se necessário no futuro */}
         <View style={stylesHome.headerIconPlaceholder} /> 
         <Text style={stylesHome.customHeaderTitle}>ComUnidade</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={stylesHome.settingsIcon}>
@@ -17,6 +18,9 @@ const HomeScreen = ({ navigation }) => {
       </View>
       
       <View style={stylesHome.container}>
+        {/* Adicionando a Logo Aqui */}
+        <Image source={AppLogo} style={stylesHome.logo} /> 
+
         <Text style={stylesHome.welcomeText}>Bem-vindo!</Text>
         <Text style={stylesHome.infoText}>Aceda às funcionalidades abaixo para se conectar e manter-se informado.</Text>
         
@@ -26,7 +30,7 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity style={stylesHome.actionButton} onPress={() => navigation.navigate('Mensagens')}>
           <Icon name="message-processing-outline" size={24} color="#FFFFFF" style={stylesHome.actionIcon} />
-          <Text style={stylesHome.actionButtonText}>Mensagens Offline</Text>
+          <Text style={stylesHome.actionButtonText}>Canais de Comunicação</Text>
         </TouchableOpacity>
          <TouchableOpacity style={stylesHome.actionButton} onPress={() => navigation.navigate('Map')}>
           <Icon name="map-marker-outline" size={24} color="#FFFFFF" style={stylesHome.actionIcon} />
@@ -66,15 +70,15 @@ const stylesHome = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'center', 
     alignItems: 'center',
     padding: 20,
   },
-  logo: {
-    width: 0, 
-    height: 150, 
-    resizeMode: 'contain',
-    marginBottom: 20,
+  logo: { 
+    width: 120, 
+    height: 120, 
+    resizeMode: 'contain', 
+    marginBottom: 30, 
   },
   welcomeText: {
     fontSize: 28,
@@ -98,7 +102,7 @@ const stylesHome = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 10,
     marginBottom: 15,
-    width: '95%', // Um pouco mais largo
+    width: '95%', 
   },
   actionIcon: {
     marginRight: 15,
@@ -108,5 +112,6 @@ const stylesHome = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
-}); 
+});
+
 export default HomeScreen;
