@@ -9,11 +9,8 @@
   **RM:** 555287
 ## 📺 Link para o Vídeo de Demonstração no YouTube
 
-[LINK_PARA_SEU_VIDEO_NO_YOUTUBE]
+(https://youtu.be/Am0JvEMA3nk)
 
-*(Se tiver um vídeo pitch separado, adicione o link aqui também)*
-
----
 
 ## 💡 Descrição da Solução "ComUnidade"
 
