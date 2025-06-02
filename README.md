@@ -53,7 +53,7 @@ O "ComUnidade" é uma aplicação móvel desenvolvida em React Native (com Expo)
 
 ## 🔗 Link do Repositório Backend (Java Spring Boot)
 
-[LINK_REPOSITORIO_BACKEND_GITHUB_CLASSROOM]
+[[LINK_REPOSITORIO_BACKEND_GITHUB_CLASSROOM]](https://github.com/Gu1LhermeF5P/comunidade_java_v)
 
 ---
 
