@@ -11,7 +11,8 @@
 
 (https://youtu.be/Am0JvEMA3nk)
 
-
+Pitch 
+https://youtu.be/6OfL3rvwpCc
 ## 💡 Descrição da Solução "ComUnidade"
 
 O "ComUnidade" é uma aplicação móvel desenvolvida em React Native (com Expo) como parte da Global Solution da FIAP. O objetivo é fornecer uma ferramenta para mitigar os impactos de eventos extremos na população, facilitando a comunicação e o acesso a informações cruciais, com foco em funcionalidades que podem operar em cenários de conectividade limitada ou offline.
